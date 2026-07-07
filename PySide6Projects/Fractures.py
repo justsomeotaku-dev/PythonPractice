@@ -1,7 +1,7 @@
 from PIL import Image, ImageEnhance
 from PIL.ImageQt import ImageQt
 
-from PySide6.QtWidgets import QApplication, QCheckBox, QMainWindow, QLabel, QSlider, QWidget, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QApplication, QCheckBox, QMainWindow, QLabel, QSlider, QWidget, QVBoxLayout, QPushButton, QSpinBox 
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QTimer
 
@@ -20,12 +20,12 @@ class MainWindow(QMainWindow):
         self.threshold_up = True
         self.threshold = False
 
-        self.original_image = Image.open("negev.jpg")
+        self.original_image = Image.open("yahu.jpg")
 
-        self.image = ImageEnhance.Contrast(self.original_image).enhance(2)
+        self.image = ImageEnhance.Contrast(self.original_image).enhance(20)
 
-        max_width = 700
-        max_height = 700
+        max_width = 1920
+        max_height = 1920
         scale = min(max_width / self.image.width, max_height / self.image.height)
 
         new_width = scale * self.image.width
@@ -54,6 +54,22 @@ class MainWindow(QMainWindow):
         self.checkbox = QCheckBox("Threshold Wave")
         self.checkbox.setChecked(False)
 
+        # Spinboxes
+        self.width_spinbox = QSpinBox()
+        self.width_spinbox.setRange(1,2000)
+        self.width_spinbox.setValue(self.image.width)
+
+        self.height_spinbox = QSpinBox()
+        self.height_spinbox.setRange(1,2000)
+        self.height_spinbox.setValue(self.image.height)
+
+        self.width_spinbox.valueChanged.connect(self.update_image)
+        self.height_spinbox.valueChanged.connect(self.update_image)
+
+        # save button
+        self.save_button = QPushButton("Save")
+        self.save_button.clicked.connect(self.save_image)
+
         # Image display
         self.image_label = QLabel()
 
@@ -68,23 +84,30 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.half_vertical_button)
         layout.addWidget(self.threshold_slider),
         layout.addWidget(self.checkbox)
+        layout.addWidget(self.width_spinbox)
+        layout.addWidget(self.height_spinbox)
         layout.addWidget(self.image_label)
+        layout.addWidget(self.save_button)
 
         self.setCentralWidget(central_widget)
 
         self.update_image()
 
     def update_image(self):
-        img = self.image
+        self.img = self.image.copy()
+        if self.threshold:
+            self.img = self.image.convert('L') #Grayscale
+            self.img = self.img.point(lambda p: 255 if p > self.threshold_value else 0)
+            self.img = self.img.convert('RGB')
 
-        if self.threshold == True:
-            img = self.image.convert('L') #Grayscale
-            img = img.point(lambda p: 255 if p > self.threshold_value else 0)
-            img = img.convert('RGB')
+        self.img = self.img.resize((self.width_spinbox.value(),self.height_spinbox.value()))
 
-        qt_image = ImageQt(img)
+        qt_image = ImageQt(self.img)
         pixmap = QPixmap.fromImage(qt_image)
         self.image_label.setPixmap(pixmap)
+
+    def save_image(self):
+        self.img.save("output.png")
 
     def timer_threshold(self):
         if self.checkbox.isChecked():
@@ -101,8 +124,9 @@ class MainWindow(QMainWindow):
             self.update_image()
 
     def square_image(self):
-        size = max(self.image.width, self.image.height)
-        self.image = self.image.resize((size, size))
+        size = max(self.width_spinbox.value(), self.height_spinbox.value())
+        self.width_spinbox.setValue(size)
+        self.height_spinbox.setValue(size)
         self.update_image()
 
     def multiply_image(self):
