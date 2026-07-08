@@ -7,6 +7,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("PySide Window")
         button = QPushButton("Press Me!")
+        button.clicked.connect(self.close)
         self.setCentralWidget(button)
 
 app = QApplication()

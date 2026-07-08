@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
 
         self.original_image = Image.open("yahu.jpg")
 
-        self.image = ImageEnhance.Contrast(self.original_image).enhance(20)
+        self.image = ImageEnhance.Contrast(self.original_image).enhance(2)
 
         max_width = 1920
         max_height = 1920
